@@ -79,7 +79,14 @@ function renderLabels(){const base=(localStorage.getItem(URLKEY)||location.href.
 function renderAll(){renderOffice();renderAdmin();renderHistory();renderLabels()}
 document.querySelectorAll('.navbtn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(b.dataset.view).classList.add('active')}));document.getElementById('openItemBtn').onclick=()=>showFactoryItem(document.getElementById('factoryCode').value);document.getElementById('factoryCode').addEventListener('keydown',e=>{if(e.key==='Enter')showFactoryItem(e.target.value)});document.getElementById('clearForm').onclick=clearForm;document.getElementById('saveBaseUrl').onclick=()=>{localStorage.setItem(URLKEY,document.getElementById('baseUrl').value.trim());renderLabels();alert('Base URL saved.')};document.getElementById('openFullAppBtn').onclick=()=>{location.href=location.href.split('?')[0]};
 document.getElementById('itemForm').addEventListener('submit',async e=>{e.preventDefault();const old=document.getElementById('editId').value;const obj={code:document.getElementById('code').value.trim(),category:document.getElementById('category').value.trim(),description:document.getElementById('description').value.trim(),variant:document.getElementById('variant').value.trim(),size:document.getElementById('size').value.trim(),supplier:document.getElementById('supplier').value.trim(),kanban_qty:document.getElementById('kanbanQty').value.trim(),reorder_qty:document.getElementById('reorderQty').value.trim(),lead_time:document.getElementById('leadTime').value.trim()};if(LIVE){if(old){const r=await db.from('kanban_items').update(obj).eq('code',old);if(r.error)return alert(r.error.message);await addEvent(obj.code,'item_updated','Item details updated')}else{const r=await db.from('kanban_items').insert({...obj,status:'in_stock'});if(r.error)return alert(r.error.message);await addEvent(obj.code,'item_created','Item created')}await loadAll()}else{if(old){const i=items.find(x=>x.code===old);Object.assign(i,obj)}else{if(items.some(i=>i.code.toLowerCase()===obj.code.toLowerCase()))return alert('That item code already exists.');items.push({...obj,id:Date.now(),status:'in_stock',requested_at:null,ordered_at:null,received_at:null,reorder_note:null})}saveDemo();renderAll()}clearForm()});
-loadAll();if(LIVE)setInterval(()=>loadAll(),10000);
+function smartRefresh(){
+  const note=document.getElementById('reorderNote');
+  // Do not redraw the QR item screen while a factory user is typing a note.
+  // Redrawing would replace the textarea and discard the unsent text.
+  if(note && (document.activeElement===note || note.value.trim()!=='')) return;
+  loadAll();
+}
+loadAll();if(LIVE)setInterval(smartRefresh,10000);
 </script>
 </body>
 </html>
