@@ -38,7 +38,7 @@ main{max-width:none;padding:0}
 </head>
 <body>
 <header>
-  <div class="brand"><span>ACACIA</span><span class="mark"></span><span class="sub">Stock Kanban v0.6.1</span><span id="modeBadge" class="mode demo">DEMO MODE</span></div>
+  <div class="brand"><span>ACACIA</span><span class="mark"></span><span class="sub">Stock Kanban v0.6.3</span><span id="modeBadge" class="mode demo">DEMO MODE</span></div>
   <nav>
     <button class="navbtn active" data-view="factory">Factory</button>
     <button class="navbtn" data-view="office">Office</button>
@@ -93,9 +93,11 @@ function factorySearch(query){
   const exactCode=items.find(i=>String(i.code||'').toLowerCase()===needle);
   if(exactCode){showFactoryItem(exactCode.code);return}
   const searchable=i=>[i.tool_name,i.description,i.variant,i.category,i.supplier,i.code].filter(Boolean).map(v=>String(v).toLowerCase());
-  let matches=items.filter(i=>searchable(i).some(v=>v===needle));
-  if(matches.length===1){showFactoryItem(matches[0].code);return}
-  if(matches.length===0) matches=items.filter(i=>searchable(i).some(v=>v.includes(needle)));
+  // For name/description searches, always consider every partial match.
+  // Only an exact item code opens immediately. This prevents a generic term
+  // such as "staples" from opening one exact-description match while hiding
+  // other relevant matches such as "Chisel point staples".
+  const matches=items.filter(i=>searchable(i).some(v=>v.includes(needle)));
   if(matches.length===1){showFactoryItem(matches[0].code);return}
   if(matches.length===0){el.innerHTML='<div class="card"><div class="note">No items found for <strong>'+esc(q)+'</strong>.</div></div>';return}
   matches.sort((a,b)=>String(a.tool_name||a.variant||a.description||a.code).localeCompare(String(b.tool_name||b.variant||b.description||b.code)));
